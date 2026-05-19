@@ -37,3 +37,18 @@ target_include_directories(pearlcd PRIVATE
 	${CMAKE_CURRENT_BINARY_DIR}
 )
 
+add_executable(pearl_tests
+	tests/unit/test_api.c
+	src/frontend/ast.c
+	src/frontend/semantic.c
+	src/backend/ir.c
+	src/backend/codegen_c.c
+	${BISON_PEARLCD_PARSER_OUTPUTS}
+	${FLEX_PEARLCD_LEXER_OUTPUTS}
+)
+
+target_include_directories(pearl_tests PRIVATE
+	${CMAKE_CURRENT_SOURCE_DIR}/include
+	${CMAKE_CURRENT_BINARY_DIR}
+)
+

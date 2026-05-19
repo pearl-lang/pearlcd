@@ -1,3 +1,16 @@
-After the project is finished and confirmed to work locally, set up CI/CD so release builds are produced for both Windows and Linux. GitHub Actions can be used for the CI/CD flow, and it can run on every push and pull request. The CI/CD pipeline should first build and test the project, then create release builds and upload them to GitHub Releases. Documentation can also be updated in the pipeline, for example by using pandoc to convert Markdown files to PDF and attaching them to GitHub Releases.
+After the project is finished and confirmed to work locally, set up CI/CD so release builds are produced for both Windows and Linux. GitHub Actions is used by this repository; there are two workflows:
 
-It is important to check the output of each step to make sure the pipeline finishes successfully. When setting up CI/CD, make sure each step is configured correctly and all required dependencies are installed. The pipeline should follow continuous integration and continuous delivery principles so that every change keeps the project buildable and working. CI/CD is an important tool for improving project quality and speeding up development, so it should be configured carefully and maintained regularly. It also plays a critical role in giving users and developers a reliable and up-to-date release, so the workflow should work correctly and be easy to update when needed.
+- `.github/workflows/ci.yml` — runs on `push`/`pull_request` on `main` and builds a matrix for `ubuntu-latest` and `windows-latest` (MinGW). It installs required packages, configures CMake, builds, and runs smoke tests (`--parse`, `--lower`, `--run`).
+- `.github/workflows/release.yml` — runs when a Release is published; it builds Release artifacts for Linux and Windows, packages them (tar/zip), computes SHA256 checksums, and uploads artifacts to the Release.
+
+Local testing hints:
+
+- Use `bash scripts/build.sh [toolchain] [build-dir]` to configure and build locally.
+- Use `bash scripts/package_release.sh [outdir]` to produce archives and SHA256 locally before publishing a Release.
+- To simulate CI on a dev machine, consider using `act` (https://github.com/nektos/act) but note differences in runner environments.
+
+Tips for maintenance:
+
+- Keep the CI matrix minimal and fast; avoid heavy external downloads.
+- Run `--run` smoke tests that compile generated C — this catches portability/runtime regressions early.
+- If you add dependencies (e.g., LLVM toolchain), install them explicitly in CI steps.

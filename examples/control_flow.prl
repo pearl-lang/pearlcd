@@ -1,0 +1,15 @@
+fun main() {
+	var i = 0
+	while (i < 5) {
+		print("i=%d\n", i)
+		i = i + 1
+	}
+
+	for (var j = 0; j < 3; j = j + 1) {
+		print("j=%d\n", j)
+	}
+
+	if (i == 5) {
+		justPrint("i reached 5")
+	}
+}

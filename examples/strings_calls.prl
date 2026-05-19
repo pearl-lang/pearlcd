@@ -1,0 +1,10 @@
+fun greet(name) {
+	print("Hello, %s!\n", name)
+}
+
+fun main() {
+	greet("Alice")
+	greet("Bob")
+	var s = "A short string"
+	justPrint(s)
+}

@@ -1,0 +1,8 @@
+fun add(x, y) {
+	return x + y
+}
+
+fun main() {
+	var r = add(7, 8)
+	print("add returned %d\n", r)
+}

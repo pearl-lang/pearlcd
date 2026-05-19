@@ -1,5 +1,7 @@
 # Build outputs
 build/
+dist/
+out/
 
 # Generated files
 *.o

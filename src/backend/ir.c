@@ -3,32 +3,40 @@
 #include <string.h>
 #include <stdlib.h>
 
+static char *pearl_strdup(const char *s) {
+    if (!s) return NULL;
+    size_t n = strlen(s) + 1;
+    char *r = malloc(n);
+    if (r) memcpy(r, s, n);
+    return r;
+}
+
 static int temp_counter = 0;
 static int label_counter = 0;
 
 static char *new_temp(void) {
     char buf[32];
     snprintf(buf, sizeof(buf), "t%d", ++temp_counter);
-    return strdup(buf);
+    return pearl_strdup(buf);
 }
 
 static char *new_label(const char *base) {
     char buf[64];
     snprintf(buf, sizeof(buf), "%s%d", base, ++label_counter);
-    return strdup(buf);
+    return pearl_strdup(buf);
 }
 
 /* Lower an expression and return a string naming the value (temp or literal/name).
  * Caller must free the returned string.
  */
 static char *lower_expr(PearlAstNode *node, FILE *out) {
-    if (!node) return strdup("<nil>");
+    if (!node) return pearl_strdup("<nil>");
 
     switch (node->kind) {
     case PEARL_AST_LITERAL:
-        return strdup(node->text ? node->text : "<lit>");
+        return pearl_strdup(node->text ? node->text : "<lit>");
     case PEARL_AST_IDENTIFIER:
-        return strdup(node->text ? node->text : "<id>");
+        return pearl_strdup(node->text ? node->text : "<id>");
     case PEARL_AST_BINARY: {
         PearlAstNode *l = node->first_child;
         PearlAstNode *r = l ? l->next : NULL;
@@ -66,7 +74,7 @@ static char *lower_expr(PearlAstNode *node, FILE *out) {
             fprintf(out, "\n");
             for (int j = 0; j < argc; ++j) free(args[j]);
             free(args);
-            return strdup("<void>");
+            return pearl_strdup("<void>");
         } else {
             char *tmp = new_temp();
             fprintf(out, "%s = call %s", tmp, fn);
@@ -78,7 +86,7 @@ static char *lower_expr(PearlAstNode *node, FILE *out) {
         }
     }
     default:
-        return strdup("<expr>");
+        return pearl_strdup("<expr>");
     }
 }
 

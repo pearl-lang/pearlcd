@@ -1,21 +1,62 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
-      - name: Install deps
+
+      - name: Prepare dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake bison flex
+
+      - name: Prepare dependencies (Windows via MSYS2)
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: |
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-bison
+            mingw-w64-x86_64-flex
+
       - name: Configure
+        if: matrix.os == 'ubuntu-latest'
         run: cmake -S . -B build
+
+      - name: Configure (Windows, MinGW)
+        if: matrix.os == 'windows-latest'
+        run: |
+          bash -lc 'cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make'
+
       - name: Build
+        if: matrix.os == 'ubuntu-latest'
         run: cmake --build build -j$(nproc)
+
+      - name: Build (Windows)
+        if: matrix.os == 'windows-latest'
+        run: bash -lc 'cmake --build build -- -j2'
+
       - name: Run parser + lower smoke tests
         run: |
-          ./build/pearlcd --parse examples/test.prl
-          ./build/pearlcd --lower examples/test.prl
+          echo "Running parse/lower/run smoke tests"
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            bash -lc './build/pearlcd --parse examples/test.prl'
+            bash -lc './build/pearlcd --lower examples/test.prl'
+            bash -lc './build/pearlcd --run examples/test.prl'
+          else
+            ./build/pearlcd --parse examples/test.prl
+            ./build/pearlcd --lower examples/test.prl
+            ./build/pearlcd --run examples/test.prl
+          fi
