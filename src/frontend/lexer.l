@@ -48,7 +48,7 @@ static int emit_text_token(int token, const char *kind) {
 %%
 
 [ \t\r]+                         ;
-\n                               { return emit_token(TOK_NEWLINE, "NEWLINE"); }
+\n                               { return emit_token(TOK_SEP, "SEP"); }
 "//"[^\n]*                      ;
 "var"                           { return emit_token(TOK_VAR, "KW_VAR"); }
 "fun"                           { return emit_token(TOK_FUN, "KW_FUN"); }
@@ -79,7 +79,7 @@ static int emit_text_token(int token, const char *kind) {
 "{"                             { return emit_token(TOK_LBRACE, "LBRACE"); }
 "}"                             { return emit_token(TOK_RBRACE, "RBRACE"); }
 ","                             { return emit_token(TOK_COMMA, "COMMA"); }
-";"                             { return emit_token(TOK_SEMICOLON, "SEMICOLON"); }
+";"                             { return emit_token(TOK_SEP, "SEP"); }
 "\""([^\"\\\n]|\\.)*"\"" { return emit_text_token(TOK_STRING, "STRING"); }
 [0-9]+                          { return emit_text_token(TOK_NUMBER, "NUMBER"); }
 [A-Za-z_][A-Za-z0-9_]*          { return emit_ident(); }

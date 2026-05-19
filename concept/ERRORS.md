@@ -20,6 +20,18 @@ Pearl should report errors in a simple and helpful way.
 
 Keep error handling readable. A first version of the compiler should prioritize clear messages over fancy diagnostics.
 
+### Current Implementation
+
+The current `--check` mode reports simple semantic errors such as:
+
+- duplicate variable names in the same scope
+- duplicate parameter names
+- duplicate function names
+- unknown identifiers
+- unknown names on assignment
+
+This keeps the feedback short and easy to understand.
+
 ### Design Goal
 
 Errors should help the user understand what went wrong and how to fix it without extra complexity.

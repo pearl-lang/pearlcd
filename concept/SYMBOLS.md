@@ -29,6 +29,19 @@ Use a small scope stack:
 
 The compiler needs a clear way to know what an identifier means before code generation starts.
 
+### Current Implementation
+
+The first semantic pass uses a small symbol table with nested scopes. It already checks:
+
+- duplicate function names
+- duplicate variable names in the same scope
+- duplicate parameter names
+- unknown identifiers in expressions and assignments
+
+This is enough for a first KISS-friendly compiler pass.
+
+Function names are collected first, then function bodies are checked. This keeps calls to other functions consistent with the global scope.
+
 ### Design Goal
 
 Keep symbol handling simple and explicit. Do not add advanced features until the basic language works.

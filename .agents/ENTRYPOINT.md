@@ -13,5 +13,6 @@ Current status:
 - command-line input works with files and stdin
 - build generation currently uses CMake and Flex
 - parser mode works and prints a simple AST
-- current focus is cleaner grammar, symbols/scopes, and a small semantic layer
+- `--check` mode works and catches duplicate names and unknown identifiers
+- current focus is cleaner grammar and a slightly better AST/semantic shape
 - next larger step is CI/CD and release builds

@@ -1,4 +1,5 @@
 %defines
+/* parse.trace removed for cleaner runtime output */
 
 %code requires {
     #include "ast.h"
@@ -14,6 +15,7 @@
 extern int yylex(void);
 extern FILE *yyin;
 extern int yylineno;
+int yydebug = 0;
 
 PearlAstNode *pearl_parser_root = NULL;
 static const char *pearl_parser_source = NULL;
@@ -73,19 +75,27 @@ int yyerror(const char *message) {
     PearlAstNode *node;
 }
 
+/* Operator precedence to resolve expression ambiguities */
+%right TOK_ASSIGN
+%left TOK_EQ TOK_NE
+%left TOK_LT TOK_LE TOK_GT TOK_GE
+%left TOK_PLUS TOK_MINUS
+%left TOK_STAR TOK_SLASH
+%right TOK_BANG
+
 %token <text> TOK_IDENT TOK_STRING TOK_NUMBER TOK_TRUE TOK_FALSE TOK_NULL
 %token TOK_VAR TOK_FUN TOK_IF TOK_ELSE TOK_WHILE TOK_FOR TOK_RETURN TOK_PRINT TOK_JUSTPRINT
 %token TOK_EQ TOK_NE TOK_LE TOK_GE TOK_ASSIGN TOK_PLUS TOK_MINUS TOK_STAR TOK_SLASH TOK_LT TOK_GT TOK_BANG
-%token TOK_LPAREN TOK_RPAREN TOK_LBRACE TOK_RBRACE TOK_COMMA TOK_SEMICOLON TOK_NEWLINE TOK_UNKNOWN
+%token TOK_LPAREN TOK_RPAREN TOK_LBRACE TOK_RBRACE TOK_COMMA TOK_SEP TOK_UNKNOWN
 
-%type <node> program function_list function_def params_opt params block statements statement var_decl assignment call_stmt return_stmt if_stmt while_stmt for_stmt expr expr_opt call_expr arg_list_opt arg_list primary unary factor term comparison equality call_name skip_newlines
+%type <node> program atom function_list function_def params_opt params block statements sep_opt statements_opt statement var_decl assignment call_stmt return_stmt if_stmt while_stmt for_stmt expr arg_list_opt arg_list primary unary factor term comparison equality
 
 %start program
 
 %%
 
 program
-    : skip_newlines function_list skip_newlines
+    : sep_opt function_list sep_opt
       {
           PearlAstNode *root = make_node(PEARL_AST_PROGRAM, NULL);
           pearl_ast_append_child(root, $2);
@@ -93,16 +103,13 @@ program
       }
     ;
 
-skip_newlines
+/* optional separator list used inside blocks/statements */
+sep_opt
     :
       {
           $$ = NULL;
       }
-    | skip_newlines TOK_NEWLINE
-      {
-          $$ = NULL;
-      }
-    | skip_newlines TOK_SEMICOLON
+    | TOK_SEP sep_opt
       {
           $$ = NULL;
       }
@@ -114,7 +121,7 @@ function_list
           $$ = make_node(PEARL_AST_BLOCK, NULL);
           append_list($$, $1);
       }
-    | function_list skip_newlines function_def
+    | function_list TOK_SEP function_def
       {
           $$ = $1;
           append_list($$, $3);
@@ -156,23 +163,41 @@ params
     ;
 
 block
-    : TOK_LBRACE skip_newlines statements skip_newlines TOK_RBRACE
-      {
-          PearlAstNode *block_node = make_node(PEARL_AST_BLOCK, NULL);
-          pearl_ast_append_child(block_node, $3);
-          $$ = block_node;
+  : TOK_LBRACE sep_opt statements_opt TOK_RBRACE
+    {
+      PearlAstNode *block_node = make_node(PEARL_AST_BLOCK, NULL);
+      if ($3 != NULL) {
+        pearl_ast_append_child(block_node, $3);
       }
+      $$ = block_node;
+    }
+  ;
+
+statements_opt
+  :
+    {
+      $$ = NULL;
+    }
+  | statements
+    {
+      $$ = $1;
+    }
     ;
 
 statements
-    :
+    : statement
       {
           $$ = make_node(PEARL_AST_BLOCK, NULL);
+          append_list($$, $1);
       }
-    | statements skip_newlines statement
+    | statements TOK_SEP statement
       {
           $$ = $1;
           append_list($$, $3);
+      }
+    | statements TOK_SEP
+      {
+          $$ = $1;
       }
     ;
 
@@ -205,33 +230,20 @@ assignment
       }
     ;
 
-call_name
-    : TOK_IDENT
-      {
-          $$ = wrap_identifier($1);
-      }
-    | TOK_PRINT
-      {
-          $$ = wrap_identifier("print");
-      }
-    | TOK_JUSTPRINT
-      {
-          $$ = wrap_identifier("justPrint");
-      }
-    ;
-
 call_stmt
-    : call_expr
+    : TOK_PRINT TOK_LPAREN arg_list_opt TOK_RPAREN
       {
-          $$ = $1;
+          PearlAstNode *node = make_call_node("print", $3);
+          $$ = node;
       }
-    ;
-
-call_expr
-    : call_name TOK_LPAREN arg_list_opt TOK_RPAREN
+    | TOK_JUSTPRINT TOK_LPAREN arg_list_opt TOK_RPAREN
       {
-          PearlAstNode *node = make_call_node($1->text, $3);
-          pearl_ast_free($1);
+          PearlAstNode *node = make_call_node("justPrint", $3);
+          $$ = node;
+      }
+    | TOK_IDENT TOK_LPAREN arg_list_opt TOK_RPAREN
+      {
+          PearlAstNode *node = make_call_node($1, $3);
           $$ = node;
       }
     ;
@@ -261,32 +273,26 @@ arg_list
     ;
 
 return_stmt
-    : TOK_RETURN expr_opt
+    : TOK_RETURN expr
       {
           PearlAstNode *node = make_node(PEARL_AST_RETURN, NULL);
           pearl_ast_append_child(node, $2);
           $$ = node;
       }
-    ;
-
-expr_opt
-    :
+    | TOK_RETURN
       {
-          $$ = NULL;
-      }
-    | expr
-      {
-          $$ = $1;
+          PearlAstNode *node = make_node(PEARL_AST_RETURN, NULL);
+          $$ = node;
       }
     ;
 
 if_stmt
-    : TOK_IF TOK_LPAREN expr TOK_RPAREN block skip_newlines TOK_ELSE skip_newlines block
+    : TOK_IF TOK_LPAREN expr TOK_RPAREN block TOK_ELSE block
       {
           PearlAstNode *node = make_node(PEARL_AST_IF, NULL);
           pearl_ast_append_child(node, $3);
           pearl_ast_append_child(node, $5);
-        pearl_ast_append_child(node, $9);
+          pearl_ast_append_child(node, $7);
           $$ = node;
       }
     | TOK_IF TOK_LPAREN expr TOK_RPAREN block
@@ -309,7 +315,7 @@ while_stmt
     ;
 
 for_stmt
-    : TOK_FOR TOK_LPAREN var_decl TOK_SEMICOLON expr TOK_SEMICOLON assignment TOK_RPAREN block
+    : TOK_FOR TOK_LPAREN var_decl TOK_SEP expr TOK_SEP assignment TOK_RPAREN block
       {
           PearlAstNode *node = make_node(PEARL_AST_FOR, NULL);
           pearl_ast_append_child(node, $3);
@@ -407,7 +413,7 @@ unary
       }
     ;
 
-primary
+atom
     : TOK_NUMBER
       {
           $$ = wrap_literal($1);
@@ -432,13 +438,29 @@ primary
       {
           $$ = wrap_identifier($1);
       }
-    | call_expr
-      {
-          $$ = $1;
-      }
     | TOK_LPAREN expr TOK_RPAREN
       {
           $$ = $2;
+      }
+    ;
+
+primary
+    : atom
+    | atom TOK_LPAREN arg_list_opt TOK_RPAREN
+      {
+          /* If atom is an identifier, form a normal call; otherwise create a
+             call node with a placeholder callee and keep the atom as first arg. */
+          PearlAstNode *callee = $1;
+          if (callee->kind == PEARL_AST_IDENTIFIER) {
+              PearlAstNode *name = callee;
+              PearlAstNode *node = make_call_node(name->text, $3);
+              pearl_ast_free(name);
+              $$ = node;
+          } else {
+              PearlAstNode *node = make_call_node("<expr>", $3);
+              pearl_ast_append_child(node, callee);
+              $$ = node;
+          }
       }
     ;
 
@@ -450,6 +472,8 @@ int pearl_parse_file(FILE *input, const char *source_name, PearlAstNode **out_as
     pearl_parser_source = source_name;
     pearl_parser_root = NULL;
     yyin = input;
+
+  yydebug = 0;
 
     result = yyparse();
 

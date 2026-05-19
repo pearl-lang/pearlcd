@@ -1,42 +1,49 @@
-## Intermediate Representation
+## Intermediate Representation (IR)
 
-IR is a lower-level form of the program used between the AST and code generation.
+This document describes the small, KISS textual Intermediate Representation used
+by the project's `--lower` pipeline stage. The IR is deliberately simple and
+human-readable so it is easy to inspect while we expand lowering and codegen.
 
-### Purpose
+Format
 
-- Make code generation easier.
-- Remove language-specific details.
-- Represent control flow in a more direct way.
+- File begins with `;; program` to identify the module.
+- Functions are delimited with `func <name>` and `endfunc`.
+- Instructions are one-per-line, textual, and easy to parse.
 
-### Small Compiler View
+Minimal instruction set (current)
 
-For this project, the IR should stay simple. It does not need to be a large or complicated system.
+- `print <expr>` — print the evaluated expression or literal.
+- `ret <expr>` — return from function (placeholder; may be extended).
+- `assign <name> <expr>` — assign expression to a local (placeholder form).
+- `call <name> [args...]` — call a function (arguments printed inline).
 
-### Possible IR Ideas
+Example
 
-- Load a value
-- Store a value
-- Add or subtract values
-- Compare values
-- Jump to a label
-- Call a function
-- Return a value
-
-### Example
-
-Source idea:
-
-```prl
-var z = x + y
+```
+;; program
+func main
+	print "Hello from pearl language!"
+endfunc
 ```
 
-IR idea:
+Design notes & limitations
 
-- load `x`
-- load `y`
-- add
-- store `z`
+- This IR is a debugging/prototyping format; it is not SSA or register-based.
+- Expressions are currently emitted as inline placeholders like `const 42` or
+	`<expr>`; they are not yet lowered to temporaries.
+- The IR covers a subset of constructs (functions, calls, prints, returns).
 
-### Design Goal
+Next steps
 
-The IR should be simple enough to generate and simple enough to inspect while debugging.
+- Expand expression lowering into temporaries (or SSA-like temps).
+- Add arithmetic and comparison ops and explicit temporaries.
+- Add control-flow instructions (`jmp`, `br`, `label`) to represent if/while.
+- Stabilize the textual format or move to a structured on-disk format (JSON)
+	if needed before implementing codegen.
+
+Implementation note
+
+- Current lowering lives in `src/backend/ir.c` and is invoked by the
+	`--lower` CLI mode. Use that mode to inspect output while we expand lowering
+	coverage and iterate on the IR design.
+

@@ -24,7 +24,10 @@ add_flex_bison_dependency(PEARLCD_LEXER PEARLCD_PARSER)
 
 add_executable(pearlcd
 	src/frontend/ast.c
+	src/frontend/semantic.c
 	src/main.c
+	src/backend/ir.c
+	src/backend/codegen_c.c
 	${BISON_PEARLCD_PARSER_OUTPUTS}
 	${FLEX_PEARLCD_LEXER_OUTPUTS}
 )
