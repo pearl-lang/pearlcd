@@ -7,3 +7,11 @@ Steps:
 - Read cicd.md.
 
 After you understand everything that needs to be done for the project, start working in small steps, verify that each step works, and record your progress as you go.
+
+Current status:
+- lexer mode works and prints tokens with line numbers
+- command-line input works with files and stdin
+- build generation currently uses CMake and Flex
+- parser mode works and prints a simple AST
+- current focus is cleaner grammar, symbols/scopes, and a small semantic layer
+- next larger step is CI/CD and release builds

@@ -12,6 +12,19 @@ Pearl is designed to stay small and easy to read. The syntax should support only
 - `print` and `justPrint` for output
 - `true`, `false`, and `null` for basic literal values
 
+### Current Language Pieces
+
+The first implementation focuses on a very small set of syntax pieces:
+
+- function declarations
+- variable declarations
+- function calls
+- basic expressions
+- string and number literals
+- simple control flow with `if`, `else`, `while`, and `for`
+
+This is enough for a starter compiler and keeps the language easy to grow later.
+
 ### Simple Rules
 
 - Use curly braces for blocks.

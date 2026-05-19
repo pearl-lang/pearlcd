@@ -1,0 +1,10 @@
+fun main() {
+	var x = 5
+	var y = 10
+	var total = x + y
+	if (total > 10) {
+		justPrint(total)
+	} else {
+		print(total)
+	}
+}
