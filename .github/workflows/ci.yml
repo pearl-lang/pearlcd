@@ -55,8 +55,9 @@ jobs:
 
       - name: Configure (Windows, MinGW)
         if: matrix.os == 'windows-latest'
+        shell: msys2 {0}
         run: |
-          bash -lc 'cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make'
+          cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_MAKE_PROGRAM=mingw32-make
 
       - name: Build
         if: matrix.os == 'ubuntu-latest'
@@ -64,17 +65,13 @@ jobs:
 
       - name: Build (Windows)
         if: matrix.os == 'windows-latest'
-        run: bash -lc 'cmake --build build -- -j2'
+        shell: msys2 {0}
+        run: cmake --build build -- -j2
 
       - name: Run parser + lower smoke tests
+        shell: msys2 {0}
         run: |
           echo "Running parse/lower/run smoke tests"
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            bash -lc './build/pearlcd --parse examples/test.prl'
-            bash -lc './build/pearlcd --lower examples/test.prl'
-            bash -lc './build/pearlcd --run examples/test.prl'
-          else
-            ./build/pearlcd --parse examples/test.prl
-            ./build/pearlcd --lower examples/test.prl
-            ./build/pearlcd --run examples/test.prl
-          fi
+          ./build/pearlcd --parse examples/test.prl
+          ./build/pearlcd --lower examples/test.prl
+          ./build/pearlcd --run examples/test.prl

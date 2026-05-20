@@ -51,10 +51,13 @@ jobs:
             bison \
             flex
       - name: Configure (MinGW)
-        run: bash -lc 'cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=mingw32-make'
+        shell: msys2 {0}
+        run: cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=mingw32-make
       - name: Build (MinGW)
-        run: bash -lc 'cmake --build build -- -j2'
+        shell: msys2 {0}
+        run: cmake --build build -- -j2
       - name: Package windows binary
+        shell: msys2 {0}
         run: |
           mkdir -p dist
           zip -j dist/pearlcd-windows.zip build/pearlcd.exe
