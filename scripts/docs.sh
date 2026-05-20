@@ -34,11 +34,32 @@ build_doc() {
 		fi
 
 		mkdir -p "$out_dir"
+		# Always try to build HTML. PDF may fail if LaTeX is not installed; don't abort the whole build for PDF failures.
 		pandoc "$src" -o "$out_dir/$(basename "$base_name").html"
-		pandoc "$src" -o "$out_dir/$(basename "$base_name").pdf"
+		if ! pandoc "$src" -o "$out_dir/$(basename "$base_name").pdf" 2>/tmp/pandoc-pdf.err; then
+			echo "Warning: PDF generation failed for $src (continuing):" >&2
+			sed -n '1,120p' /tmp/pandoc-pdf.err >&2 || true
+		fi
 	done
 
 	echo "Built $lang docs in $OUT_DIR/$lang"
+
+	# Build a combined book (single HTML and an attempted PDF) from all markdown files in this language.
+	{
+		mapfile -t md_files < <(find "$src_root" -name '*.md' | sort)
+		if [[ ${#md_files[@]} -gt 0 ]]; then
+			local book_out_dir="$OUT_DIR/$lang/book"
+			mkdir -p "$book_out_dir"
+			# Combined HTML
+			pandoc "${md_files[@]}" -s -o "$book_out_dir/pearlcd-$lang-book.html" || echo "Warning: combined HTML generation failed for $lang"
+			# Combined PDF (best-effort; do not fail the script if LaTeX missing)
+			if ! pandoc "${md_files[@]}" -s -o "$book_out_dir/pearlcd-$lang-book.pdf" 2>/tmp/pandoc-book-pdf.err; then
+				echo "Warning: combined PDF generation failed for $lang (continuing):" >&2
+				sed -n '1,120p' /tmp/pandoc-book-pdf.err >&2 || true
+			fi
+			echo "Built combined book for $lang in $book_out_dir"
+		fi
+	} || true
 }
 
 case "$LANGUAGE" in

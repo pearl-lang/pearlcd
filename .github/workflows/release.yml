@@ -79,6 +79,15 @@ jobs:
           name: pearlcd-windows
           path: dist
 
+      - name: Install pandoc (for docs)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc || true
+
+      - name: Build documentation (HTML + PDF attempt)
+        run: |
+          bash scripts/docs.sh all dist/docs || echo "Docs build had warnings but continuing"
+
       - name: Publish GitHub Release assets
         uses: softprops/action-gh-release@v2
         with:
