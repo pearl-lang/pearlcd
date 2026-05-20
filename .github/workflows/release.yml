@@ -37,10 +37,17 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           update: true
-          install: |
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-bison
+          msystem: MINGW64
+      - name: Refresh MSYS2 package databases
+        shell: msys2 {0}
+        run: pacman -Syy --noconfirm
+      - name: Install Windows dependencies
+        shell: msys2 {0}
+        run: |
+          pacman -S --noconfirm --needed \
+            mingw-w64-x86_64-toolchain \
+            mingw-w64-x86_64-cmake \
+            mingw-w64-x86_64-bison \
             mingw-w64-x86_64-flex
       - name: Configure (MinGW)
         run: bash -lc 'cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=mingw32-make'
@@ -49,7 +56,7 @@ jobs:
       - name: Package windows binary
         run: |
           mkdir -p dist
-          zip -j dist/pearlcd-windows.zip build/pearlcd.exe || true
+          zip -j dist/pearlcd-windows.zip build/pearlcd.exe
           powershell -Command "Get-FileHash dist/pearlcd-windows.zip -Algorithm SHA256 | ForEach-Object { \$_.Hash }" > dist/pearlcd-windows.zip.sha256
       - name: Upload windows artifacts
         uses: actions/upload-artifact@v4
@@ -66,12 +73,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: pearlcd-linux
+          path: dist
       - name: Download windows binary
         uses: actions/download-artifact@v4
         with:
           name: pearlcd-windows
+          path: dist
       - name: Create Release and upload assets
         uses: ncipollo/release-action@v1
         with:
-          artifacts: 'pearlcd-linux,pearlcd-windows'
+          artifacts: 'dist/*'
           token: ${{ secrets.GITHUB_TOKEN }}
