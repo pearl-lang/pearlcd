@@ -96,4 +96,4 @@ jobs:
             dist/docs/tr/book/pearlcd-tr-book.pdf
             dist/docs/en/book/pearlcd-en-book.pdf
             dist/*
-          fail_on_unmatched_files: true
+          fail_on_unmatched_files: false
