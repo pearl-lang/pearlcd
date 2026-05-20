@@ -92,5 +92,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.release.tag_name }}
-          files: dist/*
+          files: |
+            dist/docs/tr/book/pearlcd-tr-book.pdf
+            dist/docs/en/book/pearlcd-en-book.pdf
+            dist/*
           fail_on_unmatched_files: true
