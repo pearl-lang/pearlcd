@@ -182,12 +182,48 @@ static int run_codegen_mode(const char *path) {
 	return result;
 }
 
+static const char *pearl_temp_dir(void) {
+#ifdef _WIN32
+	const char *temp_dir = getenv("TEMP");
+	if (temp_dir == NULL || temp_dir[0] == '\0') {
+		temp_dir = getenv("TMP");
+	}
+	if (temp_dir == NULL || temp_dir[0] == '\0') {
+		temp_dir = ".";
+	}
+	return temp_dir;
+#else
+	const char *temp_dir = getenv("TMPDIR");
+	if (temp_dir == NULL || temp_dir[0] == '\0') {
+		temp_dir = "/tmp";
+	}
+	return temp_dir;
+#endif
+}
+
+static void pearl_make_temp_path(char *buffer, size_t buffer_size, const char *prefix, long pid_part, long time_part, const char *suffix) {
+	const char *temp_dir = pearl_temp_dir();
+	const size_t temp_dir_len = strlen(temp_dir);
+	const char separator =
+#ifdef _WIN32
+		'\\';
+#else
+		'/';
+#endif
+
+	if (temp_dir_len > 0 && (temp_dir[temp_dir_len - 1] == '/' || temp_dir[temp_dir_len - 1] == '\\')) {
+		snprintf(buffer, buffer_size, "%s%s%ld_%ld%s", temp_dir, prefix, pid_part, time_part, suffix);
+	} else {
+		snprintf(buffer, buffer_size, "%s%c%s%ld_%ld%s", temp_dir, separator, prefix, pid_part, time_part, suffix);
+	}
+}
+
 static int run_and_exec_codegen(const char *path) {
 	FILE *input = stdin;
 	PearlAstNode *ast = NULL;
 	int result = 0;
-	char tmpc[] = "/tmp/pearl_codegen_XXXXXX";
-	char tmpe[] = "/tmp/pearl_exec_XXXXXX";
+	char tmpc[512];
+	char tmpe[512];
 
 	if (path != NULL && strcmp(path, "-") != 0) {
 		input = fopen(path, "rb");
@@ -201,7 +237,7 @@ static int run_and_exec_codegen(const char *path) {
 	}
 
 	/* create unique temp filename and open normally to avoid mkstemp/fdopen portability issues */
-	snprintf(tmpc, sizeof(tmpc), "/tmp/pearl_codegen_%d_%ld.c", (int)getpid(), (long)time(NULL));
+	pearl_make_temp_path(tmpc, sizeof(tmpc), "pearl_codegen_", (long)getpid(), (long)time(NULL), ".c");
 	FILE *out = fopen(tmpc, "w");
 	if (!out) { perror("fopen"); pearl_ast_free(ast); if (input != stdin) fclose(input); return 1; }
 
@@ -212,10 +248,24 @@ static int run_and_exec_codegen(const char *path) {
 	if (input != stdin) fclose(input);
 
 	/* compile to executable */
-	snprintf(tmpe, sizeof(tmpe), "/tmp/pearl_exec_%d_%ld", (int)getpid(), (long)time(NULL));
-	char cmd[1024];
-	snprintf(cmd, sizeof(cmd), "gcc -O2 -std=c11 -x c -o %s %s", tmpe, tmpc);
+	pearl_make_temp_path(tmpe, sizeof(tmpe), "pearl_exec_", 
+#ifdef _WIN32
+		(long)getpid(), (long)time(NULL), ".exe"
+#else
+		(long)getpid(), (long)time(NULL), ""
+#endif
+	);
+	const size_t cmd_size = strlen(tmpe) + strlen(tmpc) + 32;
+	char *cmd = malloc(cmd_size);
+	if (cmd == NULL) {
+		perror("malloc");
+		unlink(tmpc);
+		unlink(tmpe);
+		return 1;
+	}
+	snprintf(cmd, cmd_size, "gcc -O2 -std=c11 -x c -o \"%s\" \"%s\"", tmpe, tmpc);
 	int rc = system(cmd);
+	free(cmd);
 	if (rc != 0) {
 		fprintf(stderr, "compile failed (rc=%d)\n", rc);
 		unlink(tmpc);
@@ -224,8 +274,17 @@ static int run_and_exec_codegen(const char *path) {
 	}
 
 	/* run executable */
-	snprintf(cmd, sizeof(cmd), "%s", tmpe);
-	rc = system(cmd);
+	const size_t run_cmd_size = strlen(tmpe) + 1;
+	char *run_cmd = malloc(run_cmd_size);
+	if (run_cmd == NULL) {
+		perror("malloc");
+		unlink(tmpc);
+		unlink(tmpe);
+		return 1;
+	}
+	snprintf(run_cmd, run_cmd_size, "%s", tmpe);
+	rc = system(run_cmd);
+	free(run_cmd);
 
 	unlink(tmpc);
 	unlink(tmpe);
