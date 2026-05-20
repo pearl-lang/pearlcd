@@ -1,1 +1,0 @@
-/usr/bin/cc CMakeFiles/pearl_tests.dir/tests/unit/test_api.c.o CMakeFiles/pearl_tests.dir/src/frontend/ast.c.o CMakeFiles/pearl_tests.dir/src/frontend/semantic.c.o CMakeFiles/pearl_tests.dir/src/backend/ir.c.o CMakeFiles/pearl_tests.dir/src/backend/codegen_c.c.o CMakeFiles/pearl_tests.dir/parser.tab.c.o CMakeFiles/pearl_tests.dir/lexer.yy.c.o -o pearl_tests 
