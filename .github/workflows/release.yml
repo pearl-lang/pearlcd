@@ -4,6 +4,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write
+
 jobs:
   build-linux:
     runs-on: ubuntu-latest
@@ -13,16 +16,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake bison flex
-      - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-      - name: Build
-        run: cmake --build build -j$(nproc) --config Release
-      - name: Package linux binary
-        run: |
-          mkdir -p dist
-          tar -czf dist/pearlcd-linux.tar.gz -C build pearlcd
-          sha256sum dist/pearlcd-linux.tar.gz | awk '{print $1}' > dist/pearlcd-linux.tar.gz.sha256
-          ls -l dist
+      - name: Build and package linux binary
+        run: bash scripts/package_release.sh linux dist
       - name: Upload linux artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -50,18 +45,9 @@ jobs:
             mingw-w64-x86_64-cmake \
             bison \
             flex
-      - name: Configure (MinGW)
+      - name: Build and package windows binary
         shell: msys2 {0}
-        run: cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=mingw32-make
-      - name: Build (MinGW)
-        shell: msys2 {0}
-        run: cmake --build build -- -j2
-      - name: Package windows binary
-        shell: msys2 {0}
-        run: |
-          mkdir -p dist
-          zip -j dist/pearlcd-windows.zip build/pearlcd.exe
-          powershell -Command "Get-FileHash dist/pearlcd-windows.zip -Algorithm SHA256 | ForEach-Object { \$_.Hash }" > dist/pearlcd-windows.zip.sha256
+        run: bash scripts/package_release.sh mingw dist
       - name: Upload windows artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -71,8 +57,9 @@ jobs:
   publish:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
       - name: Download linux binary
         uses: actions/download-artifact@v4
         with:
@@ -83,8 +70,9 @@ jobs:
         with:
           name: pearlcd-windows
           path: dist
-      - name: Create Release and upload assets
-        uses: ncipollo/release-action@v1
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
         with:
-          artifacts: 'dist/*'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          files: dist/*
+          fail_on_unmatched_files: true

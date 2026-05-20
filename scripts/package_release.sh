@@ -3,17 +3,35 @@
 set -euo pipefail
 
 ROOT_DIR=$(cd "$(dirname "$0")/.." && pwd)
-OUT_DIR=${1:-$ROOT_DIR/dist}
+TOOLCHAIN=""
+OUT_DIR="$ROOT_DIR/dist"
+BUILD_DIR="$ROOT_DIR/build-release"
+
+case "${1:-}" in
+  linux|macos|mingw|msvc)
+    TOOLCHAIN="$1"
+    OUT_DIR=${2:-$ROOT_DIR/dist}
+    BUILD_DIR=${3:-$ROOT_DIR/build-release-$TOOLCHAIN}
+    ;;
+  "")
+    OUT_DIR=${2:-$ROOT_DIR/dist}
+    BUILD_DIR=${3:-$ROOT_DIR/build-release}
+    ;;
+  *)
+    OUT_DIR="$1"
+    BUILD_DIR=${2:-$ROOT_DIR/build-release}
+    ;;
+esac
+
 mkdir -p "$OUT_DIR"
 
 echo "Building project (Release)..."
-cmake -S "$ROOT_DIR" -B "$ROOT_DIR/build" -DCMAKE_BUILD_TYPE=Release
-cmake --build "$ROOT_DIR/build" -- -j$(nproc || echo 2)
+bash "$ROOT_DIR/scripts/build.sh" "$TOOLCHAIN" "$BUILD_DIR"
 
-BIN="$ROOT_DIR/build/pearlcd"
+BIN="$BUILD_DIR/pearlcd"
 if [ ! -f "$BIN" ]; then
   # maybe Windows executable
-  BIN="$ROOT_DIR/build/pearlcd.exe"
+  BIN="$BUILD_DIR/pearlcd.exe"
 fi
 
 if [ ! -f "$BIN" ]; then

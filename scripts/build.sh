@@ -44,4 +44,3 @@ cmake --build "$BUILD_DIR" -- -j$(nproc || echo 2)
 
 echo "Build finished. To run: $BUILD_DIR/pearlcd --run <example.prl>"
 echo "To package release artifacts locally: scripts/package_release.sh [outdir]"
-

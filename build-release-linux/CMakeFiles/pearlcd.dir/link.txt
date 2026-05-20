@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/pearlcd.dir/src/frontend/ast.c.o CMakeFiles/pearlcd.dir/src/frontend/semantic.c.o CMakeFiles/pearlcd.dir/src/main.c.o CMakeFiles/pearlcd.dir/src/backend/ir.c.o CMakeFiles/pearlcd.dir/src/backend/codegen_c.c.o CMakeFiles/pearlcd.dir/parser.tab.c.o CMakeFiles/pearlcd.dir/lexer.yy.c.o -o pearlcd 
