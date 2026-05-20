@@ -68,7 +68,16 @@ jobs:
         shell: msys2 {0}
         run: cmake --build build -- -j2
 
-      - name: Run parser + lower smoke tests
+      - name: Run parser + lower smoke tests (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          echo "Running parse/lower/run smoke tests"
+          ./build/pearlcd --parse examples/test.prl
+          ./build/pearlcd --lower examples/test.prl
+          ./build/pearlcd --run examples/test.prl
+
+      - name: Run parser + lower smoke tests (Windows)
+        if: matrix.os == 'windows-latest'
         shell: msys2 {0}
         run: |
           echo "Running parse/lower/run smoke tests"
