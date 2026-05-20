@@ -41,4 +41,4 @@ test:
 	bash tests/run_tests.sh
 
 clean:
-	rm -rf $(BUILD_DIR) $(DIST_DIR) $(OUT_DIR)
+	rm -rf $(BUILD_DIR) $(DIST_DIR) $(OUT_DIR) docs/dist-test docs/dist-test-all

@@ -1,0 +1,3 @@
+# Rendered documentation outputs
+dist/
+dist-*/

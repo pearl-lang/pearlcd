@@ -68,3 +68,8 @@ Packaging and Releases:
 
  - The Release GitHub Actions workflow will also produce archives and SHA256
 	 checksums and attach them to the Release when published.
+
+Documentation:
+
+ - Main docs live in `docs/tr/index.md` and `docs/en/index.md`.
+ - Build rendered HTML/PDF output with `bash scripts/docs.sh [tr|en|all]`.

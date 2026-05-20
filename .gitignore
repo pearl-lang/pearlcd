@@ -2,6 +2,8 @@
 build/
 dist/
 out/
+build-release/
+build-release-*/
 
 # Generated files
 *.o
@@ -25,3 +27,7 @@ parser.tab.h
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Generated docs
+docs/dist/
+docs/dist-*/
