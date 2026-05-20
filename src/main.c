@@ -5,9 +5,13 @@
 #include "codegen_c.h"
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <fcntl.h>
 #include <time.h>
+
+#ifdef _WIN32
+#include <process.h>
+#define getpid _getpid
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
